@@ -32,6 +32,24 @@ async function run(){
      await client.connect();
      const db = client.db('smart_db');
      const productCollection = db.collection('products');
+     const bidsCollection = db.collection('bids');
+     const usersCollection = db.collection('users');
+
+     app.post("/users", async(req, res)=>{
+      const newUser = req.body;
+
+      const email = req.body.email;
+      const query = {email: email }
+      const existingUser = await usersCollection.findOne(query)
+      if(existingUser){
+        res.send("User already exist. Do not need to insert again")
+      }
+      else{
+          const result = await usersCollection.insertOne(newUser);
+      res.send(result);
+      }
+     
+     })
 
 
      app.get('/products', async(req, res) =>{
@@ -39,8 +57,11 @@ async function run(){
     //  const cursor = productCollection.find().sort({price_min: -1}).skip(2).limit(2).
     //  project(projectFields);
 
-
     console.log(req.query)
+
+
+    //find product by the specific email 
+
     const email = req.query.email;
     const query = {}
     if(email){
@@ -74,7 +95,7 @@ async function run(){
       const query = {_id: new ObjectId(id)}
       const update ={
         $set: {
-          nmae: updatedProduct.name,
+          name: updatedProduct.name,
           price: updatedProduct.price
         }
       }
@@ -91,6 +112,29 @@ async function run(){
       res.send(result)
 
      })
+
+
+     // bids related API
+
+     app.get('/bids', async(req, res) =>{
+      const email = req.query.email;
+      const query = {};
+      if(email){
+        query.buyer_email = email;
+      }
+      const cursor = bidsCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+     })
+     
+
+     app.post('/bids', async(req, res)=>{
+      const newBid = req.body;
+      const result = await bidsCollection.insertOne(newBid);
+      res.send(result);
+     })
+
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
